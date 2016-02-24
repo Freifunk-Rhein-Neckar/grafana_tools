@@ -20,4 +20,4 @@ gawk -v prefix=ffrn -v hostname=$(hostname) '{ time = systime(); print prefix ".
 
 /usr/bin/python /root/ff-tools/fastd/fastd-statistics.py -s /var/run/fastd.sock | gawk -v prefix=ffrn -v hostname=$(hostname) '{ time = systime(); print prefix "." hostname ".fastd-peers " $1 " " time "\n" prefix "." hostname ".fastd-connections " $2 " " time "\n" }' | nc -q0 $TARGET
 
-/usr/bin/pyhton ./dhcp_leases.py | nc -q0 $TARGET
+/usr/bin/python ./dhcp_leases.py | nc -q0 $TARGET
