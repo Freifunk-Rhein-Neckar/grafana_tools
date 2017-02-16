@@ -11,8 +11,6 @@ gawk -v interface=ffrn-bat -v prefix=ffrn -v hostname=$(hostname -f) '/ffrn-bat/
 
 gawk -v interface=ffrn-vpn -v prefix=ffrn -v hostname=$(hostname -f) '/ffrn-vpn/ { time = systime(); print prefix "." hostname "." interface ".rx.bytes " $2 " " time "\n" prefix "." hostname "." interface ".tx.bytes " $10 " " time "\n" prefix "." hostname "." interface ".rx.packets " $3 " " time "\n" prefix "." hostname "." interface ".tx.packets " $11 " " time "\n" }' /proc/net/dev | nc -q0 $TARGET
 
-gawk -v interface=v6upstream -v prefix=ffrn -v hostname=$(hostname -f) '/v6upstream/ { time = systime(); print prefix "." hostname "." interface ".rx.bytes " $2 " " time "\n" prefix "." hostname "." interface ".tx.bytes " $10 " " time "\n" prefix "." hostname "." interface ".rx.packets " $3 " " time "\n" prefix "." hostname "." interface ".tx.packets " $11 " " time "\n" }' /proc/net/dev | nc -q0 $TARGET
-
 gawk -v interface=mapbone -v prefix=ffrn -v hostname=$(hostname -f) '/mapbone/ { time = systime(); print prefix "." hostname "." interface ".rx.bytes " $2 " " time "\n" prefix "." hostname "." interface ".tx.bytes " $10 " " time "\n" prefix "." hostname "." interface ".rx.packets " $3 " " time "\n" prefix "." hostname "." interface ".tx.packets " $11 " " time "\n" }' /proc/net/dev | nc -q0 $TARGET
 
 gawk -v prefix=ffrn -v hostname=$(hostname -f) '{ time = systime(); print prefix "." hostname ".load.1 " $1 " " time "\n" prefix "." hostname ".load.5 " $2 " " time "\n" prefix "." hostname ".load.15 " $3 " " time "\n" }' /proc/loadavg | nc -q0 $TARGET
