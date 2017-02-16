@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import json
 import requests
 from contextlib import contextmanager
 import time
 import socket
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -16,18 +17,32 @@ def get_socket(host, port):
     yield sock
     sock.close()
 
-
 def write_to_graphite(data, prefix='ffrn'):
     now = time.time()
     with get_socket('s.ffrn.de', 2003) as s:
         for key, value in data.items():
             line = "%s.%s %s %s\n" % (prefix, key, value, now)
-            s.sendall(line.encode('latin-1'))
+            try:
+                line = line.encode('latin-1')
+                s.sendall(line)
+            except UnicodeEncodeError:
+                continue
 
 def main():
+    time.sleep(10)
     logging.basicConfig(level=logging.WARN)
 
-    URL = 'http://map.ffrn.de/data/nodes.json'
+    URL = 'https://map.ffrn.de/data/nodes.json'
+
+    trans_table = {
+        0xe4: u'ae',
+        0xf6: u'oe',
+        0xfc: u'ue',
+        0xdf: u'ss',
+        0xc4: u'Ae',
+        0xd6: u'Oe',
+        0xdc: u'Ue',
+    }
 
     gateways = []
 
@@ -42,7 +57,8 @@ def main():
         gateway_count = 0
         for node_mac, node in nodes.items():
             try:
-                hostname = node['nodeinfo']['hostname']
+                hostname = node['nodeinfo']['hostname'].translate(trans_table)
+                mac = node_mac
 
                 flags = node['flags']
                 if flags['online']:
@@ -53,29 +69,37 @@ def main():
                   gateways.append(hostname)
 
                 statistics = node['statistics']
+                nodeinfo = node['nodeinfo']
                 try:
                   loadavg = statistics['loadavg']
-                  update['%s.loadavg' % hostname] = loadavg
+                  update['%s.%s.loadavg' % (mac, hostname)] = loadavg
                 except KeyError:
                   pass
                 try:
                   uptime = statistics['uptime']
-                  update['%s.uptime' % hostname] = uptime
+                  update['%s.%s.uptime' % (mac, hostname)] = uptime
                 except KeyError:
                   pass
 
                 try:
                   clients = statistics['clients']
                   client_count += int(clients)
-                  update['%s.clients' % hostname] = clients
+                  update['%s.%s.clients' % (mac, hostname)] = clients
                 except KeyError:
                   pass
 
                 try:
+                  mem = statistics['memory_usage']
+                  update['%s.%s.mem' % (mac, hostname)] = mem
+                except KeyError:
+                  pass
+
+
+                try:
                   traffic = statistics['traffic']
                   for key in ['tx', 'rx', 'mgmt_tx', 'mgmt_rx', 'forward']:
-                      update['%s.traffic.%s.packets' % (hostname, key)] = traffic[key]['packets']
-                      update['%s.traffic.%s.bytes' % (hostname, key)] = traffic[key]['bytes']
+                      update['%s.%s.traffic.%s.packets' % (mac, hostname, key)] = traffic[key]['packets']
+                      update['%s.%s.traffic.%s.bytes' % (mac, hostname, key)] = traffic[key]['bytes']
                 except KeyError:
                   pass
             except KeyError as e:
@@ -92,4 +116,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
