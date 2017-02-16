@@ -4,4 +4,4 @@ import time
 
 leases = IscDhcpLeases('/var/lib/dhcp/dhcpd.leases')
 active_leases = leases.get_current()
-print('ffrn.' + socket.gethostname() + '.dhcp.active_leases ' + str(len(active_leases)) + ' ' + str(int(time.time())))
+print('ffrn.' + socket.getfqdn() + '.dhcp.active_leases ' + str(len(active_leases)) + ' ' + str(int(time.time())))
